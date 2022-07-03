@@ -12,11 +12,10 @@ def parse_fasta(f):
     # parsing fasta file, returns iteratable object
     name, seq = None, []
     for line in f:
-        line = line.rstrip()
+        line.rstrip()
         if line.startswith(">"):
             if name:
                 yield name, "".join(seq)
-            name, seq = line, []
         else:
             seq.append(line)
     if name:
@@ -43,7 +42,6 @@ def mendel_prob(dom: float, rec: float, phen: str) -> float:
 def fib_rabbits(gen, litter=1, init=1, mem: list = None):
     """
     calculate the number of rabbits following a altered fibonacci method
-    functions recursively
     :param gen: targeted generation which
     :param litter: number of offsprings a mature rabbit produces
     :param init: initial number of rabbits
@@ -51,7 +49,7 @@ def fib_rabbits(gen, litter=1, init=1, mem: list = None):
     :return: calculated number of rabbits for a targeted generation
     """
     if (mem is None) and (gen >= 3):
-        mem = [0] + [litter] * 2 + [0] * (gen - 2)
+        mem = [0] + [litter]*2 + [0]*(gen-2)
     if gen <= 2:
         return init
     else:  # gen >= 3
@@ -60,25 +58,6 @@ def fib_rabbits(gen, litter=1, init=1, mem: list = None):
             return mem[gen]
         else:  # mem[gen] != 0:
             return mem[gen]
-
-
-def substring(sup, sub, base: int = 1) -> list:
-    """
-    finds indices where substrings appear in a sup_string
-    function initially checks if first and last nucleotide of the substring appears within the superstring
-        with the same distance seen in a substring
-    :param sup: super-string to be searched against
-    :param sub: sub-string to be searched of
-    :param base: 1-based numbering or 0-based numbering
-    :return: list containing the start indices where sub appears in sup
-    """
-    idxs = []
-    sup_len, sub_len = map(len, [sup, sub])
-    for idx in range(sup_len - sub_len):
-        if (sup[idx] == sub[0]) and (sup[idx + sub_len - 1]):
-            if sup[idx:idx + sub_len] == sub:
-                idxs.append(idx + base)
-    return idxs
 
 
 class nucleotides:
@@ -106,40 +85,3 @@ class nucleotides:
         if reverse:
             res = res[::-1]
         return res
-
-    def gc_content(self, percent=True) -> float:
-        gc = 0
-        for nt in self.seq:
-            if (nt == "G") or (nt == "C"):
-                gc += 1
-        if percent:
-            return gc / len(self.seq) * 100
-        else:  # percent = False
-            return gc / len(self.seq)
-
-    def translate(self) -> str:
-        codon_table = {"UUU": "F", "CUU": "L", "AUU": "I", "GUU": "V",
-                       "UUC": "F", "CUC": "L", "AUC": "I", "GUC": "V",
-                       "UUA": "L", "CUA": "L", "AUA": "I", "GUA": "V",
-                       "UUG": "L", "CUG": "L", "AUG": "M", "GUG": "V",
-                       "UCU": "S", "CCU": "P", "ACU": "T", "GCU": "A",
-                       "UCC": "S", "CCC": "P", "ACC": "T", "GCC": "A",
-                       "UCA": "S", "CCA": "P", "ACA": "T", "GCA": "A",
-                       "UCG": "S", "CCG": "P", "ACG": "T", "GCG": "A",
-                       "UAU": "Y", "CAU": "H", "AAU": "N", "GAU": "D",
-                       "UAC": "Y", "CAC": "H", "AAC": "N", "GAC": "D",
-                       "UAA": "Stop", "CAA": "Q", "AAA": "K", "GAA": "E",
-                       "UAG": "Stop", "CAG": "Q", "AAG": "K", "GAG": "E",
-                       "UGU": "C", "CGU": "R", "AGU": "S", "GGU": "G",
-                       "UGC": "C", "CGC": "R", "AGC": "S", "GGC": "G",
-                       "UGA": "Stop", "CGA": "R", "AGA": "R", "GGA": "G",
-                       "UGG": "W", "CGG": "R", "AGG": "R", "GGG": "G"}
-        aa_seq = ''
-        for idx in range(0, len(self.seq), 3):
-            codon = self.seq[idx:idx + 3]
-            aa = codon_table[codon]
-            if aa == "Stop":
-                break
-            else:  # not an stop codon
-                aa_seq += aa
-        return aa_seq
