@@ -1,4 +1,4 @@
-# 4_5_subs
+# 4_5_SUBS
 import scripts.Rosalind as rs
 
 ### read data ###

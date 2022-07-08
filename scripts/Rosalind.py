@@ -1,4 +1,5 @@
-# Nucleotides
+from math import comb, inf
+
 
 def read_seq(f):
     # reading file with only a single sequence
@@ -44,21 +45,49 @@ def fib_rabbits(gen, litter=1, init=1, mem: list = None):
     """
     calculate the number of rabbits following a altered fibonacci method
     functions recursively
-    :param gen: targeted generation which
+    :param gen: targeted generation
     :param litter: number of offsprings a mature rabbit produces
-    :param init: initial number of rabbits
+    :param init: initial number of rabbit pairs
     :param mem: cached list for faster calculation
     :return: calculated number of rabbits for a targeted generation
     """
     if (mem is None) and (gen >= 3):
-        mem = [0] + [litter] * 2 + [0] * (gen - 2)
+        mem = [0] + [init] * 2 + [0] * (gen - 2)
     if gen <= 2:
-        return init
+        return mem[gen]
     else:  # gen >= 3
         if mem[gen] == 0:
             mem[gen] = fib_rabbits(gen - 1, litter, init, mem) + litter * fib_rabbits(gen - 2, litter, init, mem)
             return mem[gen]
         else:  # mem[gen] != 0:
+            return mem[gen]
+
+
+def fib_death(gen, lifespan, litter=1, init=1, mem: list = None) -> tuple:
+    """
+    calculate the number of newborns and mature rabbits following a altered fibonacci method with a lifespan
+    functions recursively
+    :param gen: targeted generation
+    :param lifespan: the lifespan of a rabbit pair
+    :param litter: number of offsprings a mature rabbit produces
+    :param init: initial number of rabbit pairs
+    :param mem: cached list for faster calculation, contains the number of newborns/matures separately
+    """
+    if mem is None:
+        mem = [(0, 0)] + [(init, 0)] + [(0, 0)] * (gen-1)
+
+    if gen == 1:
+        return mem[1]
+    else:  # gen >= 2
+        if sum(mem[gen]) == 0:
+            if gen <= lifespan:
+                mem[gen] = (fib_death(gen-1, lifespan, litter, init, mem)[1] * litter,
+                            sum(fib_death(gen-1, lifespan, litter, init, mem)))
+            else:  # gen > lifespan
+                mem[gen] = (fib_death(gen - 1, lifespan, litter, init, mem)[1] * litter,
+                            sum(fib_death(gen - 1, lifespan, litter, init, mem)) - fib_death(gen-lifespan, lifespan, litter, init, mem)[0])
+            return mem[gen]
+        else:  # cached
             return mem[gen]
 
 
@@ -81,6 +110,26 @@ def substring(sup, sub, base: int = 1) -> list:
     return idxs
 
 
+def binomial_sum(p, n, coef: bool = False) -> float:
+    """
+    Returns a binomial theorem sum
+    :param p: probability p
+    :param n: integer n
+    :param coef: default False, configured when additional multiplication is required for each term
+    :return: binomial theorem sum
+    """
+    q = 1 - p
+    res = 0
+    if not coef:
+        for k in range(0, n + 1):
+            res += comb(n, k) * (p ** k) * (q ** (n - k))
+    else:  # coef == True
+        for k in range(0, n + 1):
+            res += k * comb(n, k) * (p ** k) * (q ** (n - k))
+    return res
+
+
+# Nucleotides
 class nucleotides:
     # class used for handling nucleotide sequences
 
