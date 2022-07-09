@@ -1,8 +1,9 @@
-from math import comb, inf
+from math import comb
+from urllib.request import urlopen
 
 
 def read_seq(f):
-    # reading file with only a single sequence
+    # reading file with only a single sequence, any sequence possible
     seq = []
     for line in f:
         seq.append(line.rstrip())
@@ -13,7 +14,7 @@ def parse_fasta(f):
     # parsing fasta file, returns iteratable object
     name, seq = None, []
     for line in f:
-        line = line.rstrip()
+        line = line.rstrip("\n")
         if line.startswith(">"):
             if name:
                 yield name, "".join(seq)
@@ -24,9 +25,19 @@ def parse_fasta(f):
         yield name, "".join(seq)
 
 
+def parse_uniport(url):
+    read = urlopen(url).read()  # returns bytes str (b'')
+    read_li = str(read).split(r"\n")  # [b'name, ... "'"]
+    name = read_li.pop(0)[2:]  # retrieve and cleanse header
+    seq = ""
+    for s in read_li[:-1]:  # without last element (')
+        seq += s
+    return name, seq
+
+
 def mendel_prob(dom: float, rec: float, phen: str) -> float:
     """
-    calculate probability of resulting generation's phenotype
+    calculate probability of resulting generation's phenotype when dom, rec given
     :param dom: ratio of dominant allele
     :param rec: ratio of recessive allele
     :param phen: targeted phenotype of offsprings to be calculated
@@ -114,7 +125,7 @@ def binomial_sum(p, n, coef: bool = False) -> float:
     """
     Returns a binomial theorem sum
     :param p: probability p
-    :param n: integer n
+    :param n: integer n, total
     :param coef: default False, configured when additional multiplication is required for each term
     :return: binomial theorem sum
     """
@@ -127,6 +138,36 @@ def binomial_sum(p, n, coef: bool = False) -> float:
         for k in range(0, n + 1):
             res += k * comb(n, k) * (p ** k) * (q ** (n - k))
     return res
+
+
+def binomial_sum_limit(p, n, limit, coef: bool = False) -> float:
+    """
+    binomial_sum with a right end limit
+    :param p: probability p
+    :param n: integer n, total
+    :param limit: right end limit (from 0 to limit)
+    :param coef: default false, configured when additional multiplication is required for each term
+    :return: binomial theorem sum
+    """
+    q = 1 - p
+    res = 0
+    if not coef:
+        for k in range(0, limit + 1):
+            res += comb(n, k) * (p ** k) * (q ** (n - k))
+    else:  # coef == True
+        for k in range(0, limit + 1):
+            res += k * comb(n, k) * (p ** k) * (q ** (n - k))
+    return res
+
+
+def overlap(seq1, seq2, n: int) -> bool:
+    """
+    return whether the length n suffix of seq1 matches length n prefix of seq2
+    :param seq1: sequence which its suffix is matched against
+    :param seq2: sequence which its prefix is matched against
+    :param n: overlap length
+    """
+    return seq1[len(seq1)-n:] == seq2[:n]
 
 
 # Nucleotides
@@ -192,3 +233,38 @@ class nucleotides:
             else:  # not an stop codon
                 aa_seq += aa
         return aa_seq
+
+
+# Proteins
+class proteins:
+
+    def __init__(self, seq):
+        self.seq = seq
+
+    def reverse_translate_var(self, end=True) -> int:
+        reverse_table = {"A": ("GCU", "GCC", "GCA", "GCG"), "C": ("UGU", "UGC"), "D": ("GAU", "GAC"),
+                         "E": ("GAA", "GAG"), "F": ("UUU", "UUC"), "G": ("GGU", "GGC", "GGA", "GGG"),
+                         "H": ("CAU", "CAC"), "I": ("AUU", "AUC", "AUA"), "K": ("AAA", "AAG"),
+                         "L": ("UUA", "UUG", "CUU", "CUC", "CUA", "CUG"), "M": ("AUG",), "N": ("AAU", "AAC"),
+                         "P": ("CCU", "CCC", "CCA", "CCG"), "Q": ("CAA", "CAG"),
+                         "R": ("CGU", "CGC", "CGU", "CGC", "CGA", "CGG"),
+                         "S": ("UCU", "UCC", "UCA", "UCG", "AGU", "AGC"), "T": ("ACU", "ACC", "ACA", "ACG"),
+                         "V": ("GUU", "GUC", "GUA", "GUG"), "W": ("UGG",), "Y": ("UAU", "UAC"),
+                         "stop": ("UAA", "UAG", "UGA")}
+        var = 1
+        if end:  # consider stop codon variability
+            var *= 3
+        for aa in self.seq:
+            var *= len(reverse_table[aa])
+        return var
+
+    def weight(self) -> float:
+        # monoisotopic mass table
+        mass_table = {"A": 71.03711, "C": 103.00919, "D": 115.02694, "E": 129.04259, "F": 147.06841, "G": 57.02146,
+                      "H": 137.05891, "I": 113.08406, "K": 128.09496, "L": 113.08406, "M": 131.04049, "N": 114.04293,
+                      "P": 97.05276, "Q": 128.05858, "R": 156.10111, "S": 87.03203, "T": 101.04768, "V": 99.06841,
+                      "W": 186.07931, "Y": 163.06333}
+        mass = 0
+        for aa in self.seq:
+            mass += mass_table[aa]
+        return mass
