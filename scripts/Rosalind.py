@@ -1,5 +1,31 @@
 from math import comb
 from urllib.request import urlopen
+import pandas as pd
+
+codon_table = {"UUU": "F", "CUU": "L", "AUU": "I", "GUU": "V",
+               "UUC": "F", "CUC": "L", "AUC": "I", "GUC": "V",
+               "UUA": "L", "CUA": "L", "AUA": "I", "GUA": "V",
+               "UUG": "L", "CUG": "L", "AUG": "M", "GUG": "V",
+               "UCU": "S", "CCU": "P", "ACU": "T", "GCU": "A",
+               "UCC": "S", "CCC": "P", "ACC": "T", "GCC": "A",
+               "UCA": "S", "CCA": "P", "ACA": "T", "GCA": "A",
+               "UCG": "S", "CCG": "P", "ACG": "T", "GCG": "A",
+               "UAU": "Y", "CAU": "H", "AAU": "N", "GAU": "D",
+               "UAC": "Y", "CAC": "H", "AAC": "N", "GAC": "D",
+               "UAA": "stop", "CAA": "Q", "AAA": "K", "GAA": "E",
+               "UAG": "stop", "CAG": "Q", "AAG": "K", "GAG": "E",
+               "UGU": "C", "CGU": "R", "AGU": "S", "GGU": "G",
+               "UGC": "C", "CGC": "R", "AGC": "S", "GGC": "G",
+               "UGA": "stop", "CGA": "R", "AGA": "R", "GGA": "G",
+               "UGG": "W", "CGG": "R", "AGG": "R", "GGG": "G"}
+
+reverse_codon_table = {"A": ("GCU", "GCC", "GCA", "GCG"), "C": ("UGU", "UGC"), "D": ("GAU", "GAC"), "E": ("GAA", "GAG"),
+                       "F": ("UUU", "UUC"), "G": ("GGU", "GGC", "GGA", "GGG"), "H": ("CAU", "CAC"),
+                       "I": ("AUU", "AUC", "AUA"), "K": ("AAA", "AAG"), "L": ("UUA", "UUG", "CUU", "CUC", "CUA", "CUG"),
+                       "M": ("AUG",), "N": ("AAU", "AAC"), "P": ("CCU", "CCC", "CCA", "CCG"), "Q": ("CAA", "CAG"),
+                       "R": ("CGU", "CGC", "CGU", "CGC", "CGA", "CGG"), "S": ("UCU", "UCC", "UCA", "UCG", "AGU", "AGC"),
+                       "T": ("ACU", "ACC", "ACA", "ACG"), "V": ("GUU", "GUC", "GUA", "GUG"), "W": ("UGG",),
+                       "Y": ("UAU", "UAC"), "stop": ("UAA", "UAG", "UGA")}
 
 
 def read_seq(f):
@@ -23,6 +49,13 @@ def parse_fasta(f):
             seq.append(line)
     if name:
         yield name, "".join(seq)
+
+
+def make_fastd(fasta) -> dict:
+    fastd = {}
+    for name, seq in fasta:
+        fastd[name] = seq
+    return fastd
 
 
 def parse_uniport(url):
@@ -85,18 +118,19 @@ def fib_death(gen, lifespan, litter=1, init=1, mem: list = None) -> tuple:
     :param mem: cached list for faster calculation, contains the number of newborns/matures separately
     """
     if mem is None:
-        mem = [(0, 0)] + [(init, 0)] + [(0, 0)] * (gen-1)
+        mem = [(0, 0)] + [(init, 0)] + [(0, 0)] * (gen - 1)
 
     if gen == 1:
         return mem[1]
     else:  # gen >= 2
         if sum(mem[gen]) == 0:
             if gen <= lifespan:
-                mem[gen] = (fib_death(gen-1, lifespan, litter, init, mem)[1] * litter,
-                            sum(fib_death(gen-1, lifespan, litter, init, mem)))
+                mem[gen] = (fib_death(gen - 1, lifespan, litter, init, mem)[1] * litter,
+                            sum(fib_death(gen - 1, lifespan, litter, init, mem)))
             else:  # gen > lifespan
                 mem[gen] = (fib_death(gen - 1, lifespan, litter, init, mem)[1] * litter,
-                            sum(fib_death(gen - 1, lifespan, litter, init, mem)) - fib_death(gen-lifespan, lifespan, litter, init, mem)[0])
+                            sum(fib_death(gen - 1, lifespan, litter, init, mem)) -
+                            fib_death(gen - lifespan, lifespan, litter, init, mem)[0])
             return mem[gen]
         else:  # cached
             return mem[gen]
@@ -119,6 +153,29 @@ def substring(sup, sub, base: int = 1) -> list:
             if sup[idx:idx + sub_len] == sub:
                 idxs.append(idx + base)
     return idxs
+
+
+def erase_intron(sup, introns: list) -> str:
+    """
+    eliminates intron part from given sup-string
+    function erase sequences given in "introns" from 0 to end (order-specific workflow)
+    :param sup: sup-string containing both exons and introns
+    :param introns: list of sequences to be erased from sup-string
+    :return: intron-erased string
+    """
+    for intron in introns:
+        # get indexes
+        idxs = substring(sup, intron, base=0)
+        # erase intron if exists
+        if len(idxs) != 0:
+            idx = idxs[0]
+            # if intron is at end of sup
+            if idx + len(intron) == len(sup):
+                sup = sup[:idx+1]
+            else:  # intron in the middle of sup
+                sup = sup[:idx] + sup[idx+len(intron):]
+
+    return sup
 
 
 def binomial_sum(p, n, coef: bool = False) -> float:
@@ -167,7 +224,32 @@ def overlap(seq1, seq2, n: int) -> bool:
     :param seq2: sequence which its prefix is matched against
     :param n: overlap length
     """
-    return seq1[len(seq1)-n:] == seq2[:n]
+    return seq1[len(seq1) - n:] == seq2[:n]
+
+
+def profile_matrix(fastd, consensus: bool = False, nt_order: str = "ACGT"):
+    """
+    calculate profile matrix and consensus string from a given fastd
+    :param fastd: fastd containing names as keys and sequences as values
+    :param consensus: if function should return profile matrix or consensus string
+    :param nt_order: order of nucleotides in profile matrix
+    :return: profile matrix in pd.DataFrame or consensus string, according to the consensus parameter
+    """
+    seqs = list(fastd.values())
+    string_len = len(seqs[0])
+    profile = pd.DataFrame(0, index=list(nt_order),
+                           columns=[x + 1 for x in range(string_len)])
+    for seq in seqs:
+        for idx in range(string_len):
+            nt = seq[idx]
+            profile.loc[nt, idx + 1] += 1
+    consensus_str = "".join(profile.idxmax())
+
+    # return
+    if consensus:
+        return consensus_str
+    else:  # return profile matrix
+        return profile
 
 
 # Nucleotides
@@ -208,31 +290,60 @@ class nucleotides:
             return gc / len(self.seq)
 
     def translate(self) -> str:
-        codon_table = {"UUU": "F", "CUU": "L", "AUU": "I", "GUU": "V",
-                       "UUC": "F", "CUC": "L", "AUC": "I", "GUC": "V",
-                       "UUA": "L", "CUA": "L", "AUA": "I", "GUA": "V",
-                       "UUG": "L", "CUG": "L", "AUG": "M", "GUG": "V",
-                       "UCU": "S", "CCU": "P", "ACU": "T", "GCU": "A",
-                       "UCC": "S", "CCC": "P", "ACC": "T", "GCC": "A",
-                       "UCA": "S", "CCA": "P", "ACA": "T", "GCA": "A",
-                       "UCG": "S", "CCG": "P", "ACG": "T", "GCG": "A",
-                       "UAU": "Y", "CAU": "H", "AAU": "N", "GAU": "D",
-                       "UAC": "Y", "CAC": "H", "AAC": "N", "GAC": "D",
-                       "UAA": "Stop", "CAA": "Q", "AAA": "K", "GAA": "E",
-                       "UAG": "Stop", "CAG": "Q", "AAG": "K", "GAG": "E",
-                       "UGU": "C", "CGU": "R", "AGU": "S", "GGU": "G",
-                       "UGC": "C", "CGC": "R", "AGC": "S", "GGC": "G",
-                       "UGA": "Stop", "CGA": "R", "AGA": "R", "GGA": "G",
-                       "UGG": "W", "CGG": "R", "AGG": "R", "GGG": "G"}
         aa_seq = ''
         for idx in range(0, len(self.seq), 3):
             codon = self.seq[idx:idx + 3]
             aa = codon_table[codon]
-            if aa == "Stop":
+            if aa == "stop":
                 break
             else:  # not an stop codon
                 aa_seq += aa
         return aa_seq
+
+    def orf(self, rev_comp: bool = True) -> list:
+        """
+        return list with all possible
+        :param rev_comp:
+        :return:
+        """
+        # define targeted sequences
+        seq = nucleotides(self.seq)
+        seqs = [seq.transcribe()]
+        if rev_comp:
+            seq_comp = nucleotides(seq.complement(reverse=True)).transcribe()
+            seqs.append(seq_comp)
+
+        # get ORFs
+        orf_li = []
+        for sq in seqs:
+            for base in [0, 1, 2]:
+                for start_idx in range(base, len(sq) - 3 + 1, 3):
+                    aa_seq = ""
+                    codon = sq[start_idx:start_idx + 3]
+                    aa = codon_table[codon]
+                    if (aa_seq == "") and (aa != "M"):  # start codon not Met
+                        continue
+                    # code below proceeds when start codon is Met
+                    aa_seq += aa
+                    for idx in range(start_idx + 3, len(sq) - 3, 3):
+                        codon = sq[idx:idx + 3]
+                        aa = codon_table[codon]
+                        # end sequence of append amino acid to sequence
+                        if aa == "stop":
+                            orf_li.append(aa_seq)
+                            break
+                        else:
+                            # last possible codon, but not a stop codon
+                            # -> erase sequence and proceed to next start index
+                            if idx + 3 > len(sq):
+                                break
+                            # not a stop codon, not the last possible codon
+                            aa_seq += aa
+                            continue
+
+        orf_li = list(set(orf_li))
+
+        return orf_li
 
 
 # Proteins
@@ -242,20 +353,11 @@ class proteins:
         self.seq = seq
 
     def reverse_translate_var(self, end=True) -> int:
-        reverse_table = {"A": ("GCU", "GCC", "GCA", "GCG"), "C": ("UGU", "UGC"), "D": ("GAU", "GAC"),
-                         "E": ("GAA", "GAG"), "F": ("UUU", "UUC"), "G": ("GGU", "GGC", "GGA", "GGG"),
-                         "H": ("CAU", "CAC"), "I": ("AUU", "AUC", "AUA"), "K": ("AAA", "AAG"),
-                         "L": ("UUA", "UUG", "CUU", "CUC", "CUA", "CUG"), "M": ("AUG",), "N": ("AAU", "AAC"),
-                         "P": ("CCU", "CCC", "CCA", "CCG"), "Q": ("CAA", "CAG"),
-                         "R": ("CGU", "CGC", "CGU", "CGC", "CGA", "CGG"),
-                         "S": ("UCU", "UCC", "UCA", "UCG", "AGU", "AGC"), "T": ("ACU", "ACC", "ACA", "ACG"),
-                         "V": ("GUU", "GUC", "GUA", "GUG"), "W": ("UGG",), "Y": ("UAU", "UAC"),
-                         "stop": ("UAA", "UAG", "UGA")}
         var = 1
         if end:  # consider stop codon variability
             var *= 3
         for aa in self.seq:
-            var *= len(reverse_table[aa])
+            var *= len(reverse_codon_table[aa])
         return var
 
     def weight(self) -> float:
@@ -268,3 +370,20 @@ class proteins:
         for aa in self.seq:
             mass += mass_table[aa]
         return mass
+
+    def n_gly_motif(self, base: int = 1) -> list:
+        """
+        return indexes for N-glycosylation motif (default 1-based)
+        motif -> N{P}[ST]{P}
+        [XY] -> X or Y / {X} -> anything but X
+        :param base:defines if 1-based or 0-based for index numbering
+        :return list containing indexes for where the motif starts
+        """
+        res = []
+        for idx in range(len(self.seq) - 4):
+            if self.seq[idx] == "N":
+                if self.seq[idx + 1] != "P":
+                    if (self.seq[idx + 2] == "S") or (self.seq[idx + 2] == "T"):
+                        if self.seq[idx + 3] != "P":
+                            res.append(idx + base)
+        return res
