@@ -27,6 +27,8 @@ reverse_codon_table = {"A": ("GCU", "GCC", "GCA", "GCG"), "C": ("UGU", "UGC"), "
                        "T": ("ACU", "ACC", "ACA", "ACG"), "V": ("GUU", "GUC", "GUA", "GUG"), "W": ("UGG",),
                        "Y": ("UAU", "UAC"), "stop": ("UAA", "UAG", "UGA")}
 
+comp_nt = {"A": "T", "T": "A", "G": "C", "C": "G"}
+
 
 def read_seq(f):
     # reading file with only a single sequence, any sequence possible
@@ -136,12 +138,28 @@ def fib_death(gen, lifespan, litter=1, init=1, mem: list = None) -> tuple:
             return mem[gen]
 
 
-def substring(sup, sub, base: int = 1) -> list:
+def substring(sup, sub) -> bool:
+    """
+    return if sub is a substring of sup
+    :param sup: sequence to be searched upon
+    :param sub: sequence to be searched of
+    :return: boolean
+    """
+    match = False
+    sup_len, sub_len = map(len, [sup, sub])
+    for idx in range(sup_len - sub_len):
+        if (sup[idx] == sub[0]) == (sup[idx + sub_len - 1] == sub[-1]):
+            if sup[idx:idx + sub_len] == sub:
+                match = True
+    return match
+
+
+def substring_idx(sup, sub, base: int = 1) -> list:
     """
     finds indices where substrings appear in a sup_string
     function initially checks if first and last nucleotide of the substring appears within the superstring
         with the same distance seen in a substring
-    :param sup: super-string to be searched against
+    :param sup: super-string to be searched upon
     :param sub: sub-string to be searched of
     :param base: 1-based numbering or 0-based numbering
     :return: list containing the start indices where sub appears in sup
@@ -149,10 +167,37 @@ def substring(sup, sub, base: int = 1) -> list:
     idxs = []
     sup_len, sub_len = map(len, [sup, sub])
     for idx in range(sup_len - sub_len):
-        if (sup[idx] == sub[0]) and (sup[idx + sub_len - 1]):
+        if (sup[idx] == sub[0]) and (sup[idx + sub_len - 1] == sub[-1]):
             if sup[idx:idx + sub_len] == sub:
                 idxs.append(idx + base)
     return idxs
+
+
+def shared_motif(seqs: list) -> str:
+    """
+    returns the longest shared motif of a given list of sequences
+    :param seqs: list of sequences
+    :return: longest shared motif
+    """
+    # use the shortest sequence as the sequence to get the shared motif
+    seqs = sorted(seqs, key=len)
+    sub_seq = seqs.pop(0)
+    # finding longest shared motif
+    common = ""
+    for ln in range(len(sub_seq), 1, -1):
+        for start_idx in range(0, len(sub_seq) - ln + 1):
+            sub = sub_seq[start_idx:start_idx + ln]
+            seq, match = "", False
+            for seq in seqs:
+                match = substring(seq, sub)
+                if not match:  # if substring does not exits
+                    break  # break to assign new seq
+            if match and (seq == seqs[-1]):
+                common = sub
+                break
+        if common != "":  # if common substring is assigned
+            break
+    return common
 
 
 def erase_intron(sup, introns: list) -> str:
@@ -165,15 +210,15 @@ def erase_intron(sup, introns: list) -> str:
     """
     for intron in introns:
         # get indexes
-        idxs = substring(sup, intron, base=0)
+        idxs = substring_idx(sup, intron, base=0)
         # erase intron if exists
         if len(idxs) != 0:
             idx = idxs[0]
             # if intron is at end of sup
             if idx + len(intron) == len(sup):
-                sup = sup[:idx+1]
+                sup = sup[:idx + 1]
             else:  # intron in the middle of sup
-                sup = sup[:idx] + sup[idx+len(intron):]
+                sup = sup[:idx] + sup[idx + len(intron):]
 
     return sup
 
@@ -252,6 +297,24 @@ def profile_matrix(fastd, consensus: bool = False, nt_order: str = "ACGT"):
         return profile
 
 
+def check_reverse_palindrome(seq) -> bool:
+    # configure iteration range
+    n = len(seq)
+    if n % 2 == 0:  # length of sequence is even
+        rng = int(n / 2)
+    else:  # length of sequence is odd -> can not be a reverse palindrome
+        pal = False
+        return pal
+
+    # check if reverse palindrome
+    for idx in range(rng):
+        pal = (comp_nt[seq[idx]] == seq[n - idx - 1])
+        if not pal:  # is there a mismatch in corresponding nucleotides?
+            break
+
+    return pal
+
+
 # Nucleotides
 class nucleotides:
     # class used for handling nucleotide sequences
@@ -270,10 +333,9 @@ class nucleotides:
         return self.seq.replace("T", "U")
 
     def complement(self, reverse=False) -> str:
-        comp = {"A": "T", "T": "A", "G": "C", "C": "G"}
         res = ''
         for nt in self.seq:
-            res += comp[nt]
+            res += comp_nt[nt]
         # reverse complement
         if reverse:
             res = res[::-1]
@@ -344,6 +406,9 @@ class nucleotides:
         orf_li = list(set(orf_li))
 
         return orf_li
+
+    def check_reverse_palindrome(self):
+        return check_reverse_palindrome(self.seq)
 
 
 # Proteins
