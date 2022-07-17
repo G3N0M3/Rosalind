@@ -272,6 +272,37 @@ def overlap(seq1, seq2, n: int) -> bool:
     return seq1[len(seq1) - n:] == seq2[:n]
 
 
+def fragment_assembly(seq_list) -> str:
+    """
+    returns shortest superstring from a list of sequence with equal length
+    :param seq_list: list of sequences with equal length
+    :return: shortest superstring
+    """
+    res = seq_list.pop(0)
+    n = len(res)
+    while len(seq_list) > 0:
+        for seq_idx in range(len(seq_list)):
+            seq = seq_list[seq_idx]
+            match = False
+            for ln in range((n - 1), int(n / 2) - 1, -1):
+                # "res + seq" match
+                if overlap(res, seq, n=ln):
+                    match = True
+                    res = res + seq[ln:]
+                    del seq_list[seq_idx]
+                    break
+                # "seq + res" match
+                if overlap(seq, res, n=ln):
+                    match = True
+                    res = seq + res[ln:]
+                    del seq_list[seq_idx]
+                    break
+            # if there was a match, continue whole progress with new res
+            if match:
+                break  # break -> still in while loop
+    return res
+
+
 def profile_matrix(fastd, consensus: bool = False, nt_order: str = "ACGT"):
     """
     calculate profile matrix and consensus string from a given fastd
