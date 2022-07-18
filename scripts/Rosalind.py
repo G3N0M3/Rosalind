@@ -368,16 +368,18 @@ def permutate_ascend(to_list: list, from_list: list) -> list:
     return res
 
 
-def spliced_motif(sup, sub, base: int = 1, case=-1) -> list:
+def spliced_motif(sup, motif, case, base: int = 1) -> list:
     """
     returns list of spliced motifs
     !! theoretically works, but takes too much time, even after refining sub_array
+    -> solved by early cutting in permutation loop
     :param sup: sup-string
-    :param sub: substring
+    :param motif: substring
+    :param case: number of cases to be returned
+    # -1 to retrieve all spliced motifs, but unrecommended for long motifs or long sequences
     :param base: 1-based numbering or 0-based numbering
     # all calculations are done by 0-based numbering
     # if 1-base numbering is to be returned, indexes are modified right before actual return
-    :param case: number of cases to be returned
     :return: list of spliced motifs
     """
     ## parse indexes in sup
@@ -395,38 +397,46 @@ def spliced_motif(sup, sub, base: int = 1, case=-1) -> list:
             else:  # nt == "C"
                 c_idx.append(nt_idx)
     nt_idx = {"A": a_idx, "T": t_idx, "G": g_idx, "C": c_idx}
-    ## make sub-sequence array
-    sub_array = []
-    for nt in sub:
-        sub_array.append(nt_idx[nt][:])  # [:] for shallow copy?
+
+    ## make motif array
+    motif_array = []
+    for nt in motif:
+        motif_array.append(nt_idx[nt][:])  # [:] for shallow copy?
+
     ## refine sub_array
     # refine elements in the front of each row
-    for row in range(len(sub_array) - 1):
-        erase_crit = sub_array[row][0]
-        while sub_array[row + 1][0] <= erase_crit:
-            del sub_array[row + 1][0]
+    for row in range(len(motif_array) - 1):
+        erase_crit = motif_array[row][0]
+        while motif_array[row + 1][0] <= erase_crit:
+            del motif_array[row + 1][0]
     # refine elements in the end of each row
-    for row in range(len(sub_array) - 1, 0, -1):
-        erase_crit = sub_array[row][-1]
-        while sub_array[row - 1][-1] >= erase_crit:
-            del sub_array[row - 1][-1]
+    for row in range(len(motif_array) - 1, 0, -1):
+        erase_crit = motif_array[row][-1]
+        while motif_array[row - 1][-1] >= erase_crit:
+            del motif_array[row - 1][-1]
+
+    ## case calculation for total retrieve
+    if case == -1:
+        case = 1
+        for mtf in motif_array:
+            case *= len(motif)
+
     ## permutate to get every spliced motifs
-    to_list = [[x] for x in sub_array.pop(0)]
-    for from_list in sub_array:
+    to_list = [[x] for x in motif_array.pop(0)]
+    for from_list in motif_array:
         to_list = permutate_ascend(to_list=to_list, from_list=from_list)
+        # the following [:case] controls number of spliced motifs to be returned
+        to_list = to_list[:case]  # critical for time-consumption control
+
     ## final to_list is result to return
     res = to_list
+
     ## apply base numbering
     if base:  # if 1-base numbering
         for idx in range(len(res)):
             res[idx] = [sum(x) for x in zip(res[idx], [1] * len(res[idx]))]
-    ## case configuration
-    if case == -1:  # return all permuatations
-        return to_list
-    elif case >= 1:  # return "case" number of permutation items
-        return to_list[:case]
-    else:
-        return None  # raise error here if other case parameter is given
+
+    return res
 
 
 # Nucleotides

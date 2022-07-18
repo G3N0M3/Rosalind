@@ -9,6 +9,6 @@ seqs = list(fastd.values())
 sup = seqs[0]
 sub = seqs[1]
 
-res = rs.spliced_motif(sup, sub, base=1, case=1)[0]
+res = rs.spliced_motif(sup, sub, case=1, base=1)
 
-print(" ".join(res))
+print(" ".join(map(str, res[0])))
