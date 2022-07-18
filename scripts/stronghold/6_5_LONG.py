@@ -1,4 +1,4 @@
-# 6_4_LONG
+# 6_5_LONG
 import scripts.Rosalind as rs
 
 ### read data ###

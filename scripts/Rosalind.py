@@ -29,6 +29,12 @@ reverse_codon_table = {"A": ("GCU", "GCC", "GCA", "GCG"), "C": ("UGU", "UGC"), "
 
 comp_nt = {"A": "T", "T": "A", "G": "C", "C": "G"}
 
+# monoisotopic mass table
+mass_table = {"A": 71.03711, "C": 103.00919, "D": 115.02694, "E": 129.04259, "F": 147.06841, "G": 57.02146,
+              "H": 137.05891, "I": 113.08406, "K": 128.09496, "L": 113.08406, "M": 131.04049, "N": 114.04293,
+              "P": 97.05276, "Q": 128.05858, "R": 156.10111, "S": 87.03203, "T": 101.04768, "V": 99.06841,
+              "W": 186.07931, "Y": 163.06333}
+
 
 def read_seq(f):
     # reading file with only a single sequence, any sequence possible
@@ -346,6 +352,83 @@ def check_reverse_palindrome(seq) -> bool:
     return pal
 
 
+def permutate_ascend(to_list: list, from_list: list) -> list:
+    """
+    function made to be used for function "spliced_motif"
+    appends numbers from from_list to to_list in a ascending pattern
+    :param to_list: list to be appended to
+    :param from_list: list to choose number to be appended from
+    :return: list of lists with numbers in a ascending pattern
+    """
+    res = []
+    for to_item in to_list:
+        for from_num in from_list:
+            if to_item[-1] < from_num:
+                res.append(to_item + [from_num])
+    return res
+
+
+def spliced_motif(sup, sub, base: int = 1, case=-1) -> list:
+    """
+    returns list of spliced motifs
+    !! theoretically works, but takes too much time, even after refining sub_array
+    :param sup: sup-string
+    :param sub: substring
+    :param base: 1-based numbering or 0-based numbering
+    # all calculations are done by 0-based numbering
+    # if 1-base numbering is to be returned, indexes are modified right before actual return
+    :param case: number of cases to be returned
+    :return: list of spliced motifs
+    """
+    ## parse indexes in sup
+    a_idx, t_idx, g_idx, c_idx = [], [], [], []
+    for nt_idx in range(len(sup)):
+        nt = sup[nt_idx]
+        if nt in ("A", "T"):
+            if nt == "A":
+                a_idx.append(nt_idx)
+            else:  # nt == "T"
+                t_idx.append(nt_idx)
+        else:  # nt in ("G", "C")
+            if nt == "G":
+                g_idx.append(nt_idx)
+            else:  # nt == "C"
+                c_idx.append(nt_idx)
+    nt_idx = {"A": a_idx, "T": t_idx, "G": g_idx, "C": c_idx}
+    ## make sub-sequence array
+    sub_array = []
+    for nt in sub:
+        sub_array.append(nt_idx[nt][:])  # [:] for shallow copy?
+    ## refine sub_array
+    # refine elements in the front of each row
+    for row in range(len(sub_array) - 1):
+        erase_crit = sub_array[row][0]
+        while sub_array[row + 1][0] <= erase_crit:
+            del sub_array[row + 1][0]
+    # refine elements in the end of each row
+    for row in range(len(sub_array) - 1, 0, -1):
+        erase_crit = sub_array[row][-1]
+        while sub_array[row - 1][-1] >= erase_crit:
+            del sub_array[row - 1][-1]
+    ## permutate to get every spliced motifs
+    to_list = [[x] for x in sub_array.pop(0)]
+    for from_list in sub_array:
+        to_list = permutate_ascend(to_list=to_list, from_list=from_list)
+    ## final to_list is result to return
+    res = to_list
+    ## apply base numbering
+    if base:  # if 1-base numbering
+        for idx in range(len(res)):
+            res[idx] = [sum(x) for x in zip(res[idx], [1] * len(res[idx]))]
+    ## case configuration
+    if case == -1:  # return all permuatations
+        return to_list
+    elif case >= 1:  # return "case" number of permutation items
+        return to_list[:case]
+    else:
+        return None  # raise error here if other case parameter is given
+
+
 # Nucleotides
 class nucleotides:
     # class used for handling nucleotide sequences
@@ -457,11 +540,6 @@ class proteins:
         return var
 
     def weight(self) -> float:
-        # monoisotopic mass table
-        mass_table = {"A": 71.03711, "C": 103.00919, "D": 115.02694, "E": 129.04259, "F": 147.06841, "G": 57.02146,
-                      "H": 137.05891, "I": 113.08406, "K": 128.09496, "L": 113.08406, "M": 131.04049, "N": 114.04293,
-                      "P": 97.05276, "Q": 128.05858, "R": 156.10111, "S": 87.03203, "T": 101.04768, "V": 99.06841,
-                      "W": 186.07931, "Y": 163.06333}
         mass = 0
         for aa in self.seq:
             mass += mass_table[aa]
