@@ -368,13 +368,13 @@ def permutate_ascend(to_list: list, from_list: list) -> list:
     return res
 
 
-def spliced_motif(sup, motif, case, base: int = 1) -> list:
+def search_spliced_motif(sup, motif, case, base: int = 1) -> list:
     """
     returns list of spliced motifs
     !! theoretically works, but takes too much time, even after refining sub_array
     -> solved by early cutting in permutation loop
     :param sup: sup-string
-    :param motif: substring
+    :param motif: motif to be search in sup-string
     :param case: number of cases to be returned
     # -1 to retrieve all spliced motifs, but unrecommended for long motifs or long sequences
     :param base: 1-based numbering or 0-based numbering
@@ -437,6 +437,79 @@ def spliced_motif(sup, motif, case, base: int = 1) -> list:
             res[idx] = [sum(x) for x in zip(res[idx], [1] * len(res[idx]))]
 
     return res
+
+
+def point_mutation(nt1, nt2) -> str:
+    """
+    return "same" (no mutation), "transition", "transversion"
+    :param nt1: nucleotide from original sequence
+    :param nt2: nucleotide from mutated sequence
+    """
+    nt_type = {"A": "purine", "T": "pyrimidine", "G": "purine", "C": "pyrimidine"}
+    if nt1 == nt2:
+        return "same"
+    else:  # point mutation
+        if nt_type[nt1] == nt_type[nt2]:
+            return "transition"
+        else:
+            return "transversion"
+
+
+def longest_pattern_subsequence(seq_list: list, ascending: bool = True) -> str:
+    len_list = []
+    n = len(seq_list)
+
+    for num in seq_list:
+        for idx in range(n):  # from sequence length of 1 to n
+            if len(len_list) < (idx + 1):
+                len_list.append([])
+            _seq = len_list[idx]
+            if idx == 0:
+                if not _seq:  # empty
+                    len_list[idx] = [num]
+                    break  # to next number
+                else:  # not empty
+                    if ascending:
+                        if _seq[-1] > num:
+                            len_list[idx] = [num]
+                            break
+                        else:
+                            continue  # to next length
+                    else:  # descending
+                        if _seq[-1] < num:
+                            len_list[idx] = [num]
+                            break
+                        else:
+                            continue  # to next length
+            else:  # length bigger than 1
+                if not _seq:  # empty
+                    if ascending:
+                        if len_list[idx - 1][-1] < num:
+                            len_list[idx] = len_list[idx - 1] + [num]
+                            break  # to next number
+                        else:
+                            pass  # CHECK!!!
+                    else:  # descending
+                        if len_list[idx - 1][-1] > num:
+                            len_list[idx] = len_list[idx - 1] + [num]
+                            break
+                        else:
+                            pass  # CHECK!!!
+                else:  # not empty
+                    if ascending:
+                        if _seq[-1] > num:
+                            len_list[idx] = len_list[idx - 1] + [num]
+                            break  # to next number
+                        else:
+                            continue  # to next length
+                    else:  # descending
+                        if _seq[-1] < num:
+                            len_list[idx] = len_list[idx - 1] + [num]
+                            break
+                        else:
+                            continue
+
+    return " ".join(str(x) for x in len_list[-1])
 
 
 # Nucleotides

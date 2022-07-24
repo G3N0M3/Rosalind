@@ -9,6 +9,8 @@ seqs = list(fastd.values())
 sup = seqs[0]
 sub = seqs[1]
 
-res = rs.spliced_motif(sup, sub, case=1, base=1)
-
+res = rs.search_spliced_motif(sup, sub, case=1, base=1)
+"""
+See note for code explanation
+"""
 print(" ".join(map(str, res[0])))
