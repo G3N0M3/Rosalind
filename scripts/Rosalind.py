@@ -509,7 +509,7 @@ def longest_pattern_subsequence(seq_list: list, ascending: bool = True) -> str:
                         else:
                             continue
 
-    return " ".join(str(x) for x in len_list[-1])
+    return " ".join(map(str, len_list[-1]))
 
 
 # Nucleotides

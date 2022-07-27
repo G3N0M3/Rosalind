@@ -8,7 +8,6 @@ with open("../../inputs/stronghold/rosalind_pmch.txt", "r") as f:
     seq = list(fastd.values())[0]
     seq = rs.nucleotides(seq)
 
-### calculate number of perfect matches
 """
 See note
 """
@@ -19,5 +18,4 @@ n_cg = counts["C"] + counts["G"]  # number of C and G
 # dividing by two is not necessary, but fully written for understandings
 res = factorial(int(n_au / 2)) * factorial(int(n_cg / 2))
 
-### check reverse palindrome information ###
 print(res)
