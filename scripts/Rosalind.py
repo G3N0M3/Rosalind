@@ -512,6 +512,26 @@ def longest_pattern_subsequence(seq_list: list, ascending: bool = True) -> str:
     return " ".join(map(str, len_list[-1]))
 
 
+def longest_prefix_suffix_match(seq):
+    # for a more efficient method of matching
+    last_nt = seq[-1]
+    nt_idxes = []
+    for idx in range(len(seq)):
+        if seq[idx] == last_nt:
+            nt_idxes.append(idx)
+
+    # find longest length of match
+    res = 0
+    for idx in nt_idxes[::-1][1:]:
+        _prefix = seq[:idx + 1]
+        _suffix = seq[len(seq) - len(_prefix):]
+        if _prefix == _suffix:
+            res = len(_prefix)
+            break
+
+    return res
+
+
 # Nucleotides
 class nucleotides:
     # class used for handling nucleotide sequences
