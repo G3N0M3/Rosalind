@@ -512,7 +512,12 @@ def longest_pattern_subsequence(seq_list: list, ascending: bool = True) -> str:
     return " ".join(map(str, len_list[-1]))
 
 
-def p_distance(seq1, seq2):
+def p_distance(seq1, seq2) -> float:
+    """
+    calculates p-distance between sequence 1 and 2
+    p-distance: the proportion of corresponding symbols that differ btw two strings
+    :return: the p-distance between sequence 1 and 2
+    """
     diff = 0
     for idx in range(len(seq1)):
         if seq1[idx] != seq2[idx]:
@@ -520,19 +525,31 @@ def p_distance(seq1, seq2):
     return diff / len(seq1)
 
 
-def p_distance_matrix(seqs):
+def p_distance_matrix(seqs: list) -> pd.DataFrame:
+    """
+    returns a matrix (M) of p-distances between several sequences
+    When M(i, j) indicates row=i, column=j value of the matrix, M(i, j) == M(j, i)
+    :param seqs: list of sequences
+    :return:
+    """
+    # blank distance matrix (M, pandas.DataFrame)
     n_seqs = len(seqs)
     distance_matrix = pd.DataFrame(data=None,
                                    index=range(1, n_seqs + 1),
                                    columns=range(1, n_seqs + 1))
-
+    # fill distance matrix with p-distance values
     for idx1 in range(1, n_seqs + 1):
         seq1 = seqs[idx1 - 1]
         for idx2 in range(idx1, n_seqs + 1):
-            seq2 = seqs[idx2 - 1]
-            distance = p_distance(seq1, seq2)
-            distance_matrix.loc[idx1, idx2] = distance
-            distance_matrix.loc[idx2, idx1] = distance
+            # if M(i, j) is empty
+            if distance_matrix.loc[idx1, idx2] is None:
+                seq2 = seqs[idx2 - 1]
+                # fill matrix value
+                distance = p_distance(seq1, seq2)
+                distance_matrix.loc[idx1, idx2] = distance
+                # M(i, j) == M(j, i)
+                if idx1 != idx2:
+                    distance_matrix.loc[idx2, idx1] = distance
 
     return distance_matrix
 
