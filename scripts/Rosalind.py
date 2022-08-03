@@ -512,6 +512,31 @@ def longest_pattern_subsequence(seq_list: list, ascending: bool = True) -> str:
     return " ".join(map(str, len_list[-1]))
 
 
+def p_distance(seq1, seq2):
+    diff = 0
+    for idx in range(len(seq1)):
+        if seq1[idx] != seq2[idx]:
+            diff += 1
+    return diff / len(seq1)
+
+
+def p_distance_matrix(seqs):
+    n_seqs = len(seqs)
+    distance_matrix = pd.DataFrame(data=None,
+                                   index=range(1, n_seqs + 1),
+                                   columns=range(1, n_seqs + 1))
+
+    for idx1 in range(1, n_seqs + 1):
+        seq1 = seqs[idx1 - 1]
+        for idx2 in range(idx1, n_seqs + 1):
+            seq2 = seqs[idx2 - 1]
+            distance = p_distance(seq1, seq2)
+            distance_matrix.loc[idx1, idx2] = distance
+            distance_matrix.loc[idx2, idx1] = distance
+
+    return distance_matrix
+
+
 # Nucleotides
 class nucleotides:
     # class used for handling nucleotide sequences
