@@ -554,6 +554,23 @@ def p_distance_matrix(seqs: list) -> pd.DataFrame:
     return distance_matrix
 
 
+def hamm_distance(seq1, seq2) -> int:
+    """
+    calculates the hamming distance from two strings of equal length
+    hamming distance
+     -> minimum number of symbol substitutions required to transform one string into the other
+    :param seq1: sequence 1
+    :param seq2: sequence 2
+    :return: the hamming distance of sequence 1 and 2
+    """
+    seq_len = len(seq1)
+    hamm = 0
+    for idx in range(seq_len):
+        if seq1[idx] != seq2[idx]:
+            hamm += 1
+    return hamm
+
+
 # Nucleotides
 class nucleotides:
     # class used for handling nucleotide sequences
