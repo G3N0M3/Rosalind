@@ -580,6 +580,73 @@ def reverse_complement(seq) -> str:
         rev_comp += comp_nt[nt]
     return rev_comp
 
+
+def longest_common_subsequence(seq1, seq2) -> str:
+    """
+    returns the longest common subsequence of sequence 1 and 2
+    Algorithm and code from below
+    https://en.wikipedia.org/wiki/Longest_common_subsequence_problem
+    https://www.geeksforgeeks.org/longest-common-subsequence-dp-4/
+    https://www.geeksforgeeks.org/printing-longest-common-subsequence/
+    """
+    len1, len2 = map(len, [seq1, seq2])
+    # trim common prefix and suffix
+    # not essential, but improves algorithm
+    common_prefix = ""
+    for idx in range(min(len1, len2)):
+        if seq1[idx] == seq2[idx]:
+            common_prefix += seq1[idx]
+        else:
+            if idx != 0:
+                seq1 = seq1[idx:]
+                seq2 = seq2[idx:]
+                len1, len2 = map(len, [seq1, seq2])
+            break
+    common_suffix = ""
+    for idx in range(1, min(len1, len2) + 1):
+        if seq1[-idx] == seq2[-idx]:
+            common_suffix += seq1[-idx]
+        else:
+            if idx != 1:
+                seq1 = seq1[:-(idx + 1)]
+                seq2 = seq2[:-(idx + 1)]
+                len1, len2 = map(len, [seq1, seq2])
+            break
+    # create common subsequence length matrix
+    matrix = pd.DataFrame(data=None,
+                          index=range(len1 + 1),
+                          columns=range(len2 + 1))
+    # fill matrix values
+    for idx1 in range(len1 + 1):
+        for idx2 in range(len2 + 1):
+            if idx1 == 0 or idx2 == 0:
+                matrix.loc[idx1, idx2] = 0
+            else:
+                if seq1[idx1 - 1] == seq2[idx2 - 1]:
+                    matrix.loc[idx1, idx2] = matrix.loc[idx1 - 1, idx2 - 1] + 1
+                else:
+                    matrix.loc[idx1, idx2] = max(matrix.loc[idx1 - 1, idx2],
+                                                 matrix.loc[idx1, idx2 - 1])
+    # create longest common subsequence
+    lcs = ""
+    idx1, idx2 = len1, len2
+    while idx1 > 0 and idx2 > 0:
+        # if character same, append to lcs
+        if seq1[idx1 - 1] == seq2[idx2 - 1]:
+            lcs += seq1[idx1 - 1]
+            idx1 -= 1
+            idx2 -= 1
+        else:  # if character not the same
+            if matrix.loc[idx1 - 1, idx2] > matrix.loc[idx1, idx2 - 1]:
+                idx1 -= 1
+            else:
+                idx2 -= 1
+    # add common prefix and suffix to lcs
+    lcs = common_prefix + lcs[::-1] + common_suffix
+
+    return lcs
+
+
 # Nucleotides
 class nucleotides:
     # class used for handling nucleotide sequences
