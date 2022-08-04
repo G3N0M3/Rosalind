@@ -571,6 +571,15 @@ def hamm_distance(seq1, seq2) -> int:
     return hamm
 
 
+def reverse_complement(seq) -> str:
+    """
+    return reverse complement of a DNA sequence
+    """
+    rev_comp = ""
+    for nt in seq[::-1]:
+        rev_comp += comp_nt[nt]
+    return rev_comp
+
 # Nucleotides
 class nucleotides:
     # class used for handling nucleotide sequences
