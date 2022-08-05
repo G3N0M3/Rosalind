@@ -1,9 +1,21 @@
 ## This file should never contain private/confidential information
 # since it is intended to constantly uploaded on github
 
+## Do not commit if this file is the sole file modified.
+
 ## This file keeps log of anything trivial to info considered important
 
 
 << 2022.08.04 / 16:00 >>
 Starting log
+
+<< 2022.08.04 / 23:00 >>
+After struggling with 7_10_LCSQ, which is abt the longest common subsequence (lcs), searched for a solution.
+As expected, finding an lcs was a common question in computer science
+and thus an efficient algorithm was already revised.
+Did not really "feel" that studying algorithms were important for my career, until solving LCSQ.
+
+<< 2022.08.06 / 02:22 >>
+Motivation for solving problems at Rosalind is stronger than before.
+Probably because the practice is more relevant than ever.
 

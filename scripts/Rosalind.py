@@ -647,6 +647,50 @@ def longest_common_subsequence(seq1, seq2) -> str:
     return lcs
 
 
+def rank_lex(str1, str2, criteria: dict) -> tuple:
+    """
+    Rank sequence 1 and 2 of equal length according to the given criteria
+    :return: tuple containing a leading and following string in that order
+    """
+    _len = len(str1)
+    lead, follow = "", ""
+    for idx in range(_len):
+        if str1[idx] != str2[idx]:
+            if criteria[str1[idx]] < criteria[str2[idx]]:
+                lead, follow = str1, str2
+                break
+            else:
+                lead, follow = str2, str1
+                break
+        else:
+            continue
+    return lead, follow
+
+
+def order_lex(str1, str2, criteria) -> tuple:
+    """
+    Compare and order string 1 and 2 of same or different length according to the given criteria
+    :return: tuple containing a leading and following string in that order
+    """
+    len1, len2 = len(str1), len(str2)
+    if len1 == len2:
+        lead, follow = rank_lex(str1, str2, criteria)
+    else:  # len1 != len2
+        if len1 > len2:
+            _str1 = str1[:len2]
+            if order_lex(_str1, str2, criteria)[0] == _str1:
+                lead, follow = str1, str2
+            else:
+                lead, follow = str2, str1
+        else:  # len1 < len2
+            _str2 = str2[:len1]
+            if order_lex(_str2, str1, criteria)[0] == _str2:
+                lead, follow = str2, str1
+            else:
+                lead, follow = str1, str2
+    return lead, follow
+
+
 # Nucleotides
 class nucleotides:
     # class used for handling nucleotide sequences
