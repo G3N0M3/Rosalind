@@ -691,6 +691,25 @@ def order_lex(str1, str2, criteria) -> tuple:
     return lead, follow
 
 
+def reversal_distance(_pi: list, _sig: list) -> int:
+    """
+    Return the minimum number of reversals required to transform _pi into _sig
+    -> the reversal distance
+    """
+    length = len(_pi)
+    dist = 0
+    for idx in range(length):
+        if _pi[idx] != _sig[idx]:
+            change_idx = _sig.index(_pi[idx])
+            _sig = _sig[:idx] + _sig[idx:change_idx + 1][::-1] + _sig[change_idx + 1:]
+            dist += 1
+            print(f"Change # {dist}")
+            print(f"pi: {_pi}\nsigma: {_sig}\n")
+        else:
+            continue
+    return dist
+
+
 # Nucleotides
 class nucleotides:
     # class used for handling nucleotide sequences
