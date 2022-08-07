@@ -612,7 +612,7 @@ def longest_common_subsequence(seq1, seq2) -> str:
                 seq2 = seq2[:-(idx + 1)]
                 len1, len2 = map(len, [seq1, seq2])
             break
-    # create common subsequence length matrix
+    # create common subsequence matrix
     matrix = pd.DataFrame(data=None,
                           index=range(len1 + 1),
                           columns=range(len2 + 1))
@@ -645,6 +645,52 @@ def longest_common_subsequence(seq1, seq2) -> str:
     lcs = common_prefix + lcs[::-1] + common_suffix
 
     return lcs
+
+
+def shortest_common_supersequence(seq1, seq2) -> str:
+    len1, len2 = map(len, [seq1, seq2])
+    # create common supersequence matrix
+    matrix = pd.DataFrame(data=None,
+                          index=range(len1 + 1),
+                          columns=range(len2 + 1))
+    # fill matrix values
+    for idx1 in range(len1 + 1):
+        for idx2 in range(len2 + 1):
+            if idx1 == 0 or idx2 == 0:
+                if idx1 == 0:
+                    matrix.loc[idx1, idx2] = idx2
+                else:  # idx2 == 0
+                    matrix.loc[idx1, idx2] = idx1
+            else:
+                if seq1[idx1 - 1] == seq2[idx2 - 1]:
+                    matrix.loc[idx1, idx2] = 1 + matrix.loc[idx1 - 1, idx2 - 1]
+                else:
+                    matrix.loc[idx1, idx2] = 1 + min(matrix.loc[idx1 - 1, idx2],
+                                                     matrix.loc[idx1, idx2 - 1])
+    # create shortest common superstring
+    scs = ""
+    idx1, idx2 = len1, len2
+    while idx1 > 0 and idx2 > 0:
+        # if character same
+        if seq1[idx1 - 1] == seq2[idx2 - 1]:
+            scs += seq1[idx1 - 1]
+            idx1 -= 1
+            idx2 -= 1
+        else:  # if character not the same
+            if matrix.loc[idx1 - 1, idx2] > matrix.loc[idx1, idx2 - 1]:
+                scs += seq1[idx1 - 1]
+                idx1 -= 1
+            else:
+                scs += seq2[idx2 - 1]
+                idx2 -= 1
+    if not ((idx1 == 0) and (idx2 == 0)):
+        if idx1 == 0:
+            scs += seq2[:idx2][::-1]
+        else:  # idx2 == 0
+            scs += seq1[:idx1][::-1]
+        scs = scs[::-1]
+
+        return scs
 
 
 def rank_lex(str1, str2, criteria: dict) -> tuple:
