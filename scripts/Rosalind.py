@@ -648,6 +648,12 @@ def longest_common_subsequence(seq1, seq2) -> str:
 
 
 def shortest_common_supersequence(seq1, seq2) -> str:
+    """
+    returns the shortest supersequence of sequence 1 and 2
+    !!! currently generates wrong output
+    Algorithm and code from below
+    https://www.geeksforgeeks.org/print-shortest-common-supersequence/
+    """
     len1, len2 = map(len, [seq1, seq2])
     # create common supersequence matrix
     matrix = pd.DataFrame(data=None,
