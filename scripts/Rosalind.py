@@ -691,6 +691,15 @@ def order_lex(str1, str2, criteria) -> tuple:
     return lead, follow
 
 
+def divide_by_first(seqs) -> list:
+    division = {}
+    for seq in seqs:
+        if seq[0] in division:
+            division[seq[0]].append(seq[1:])
+        else:
+            division[seq[0]] = [seq[1:]]
+    return division
+
 # Nucleotides
 class nucleotides:
     # class used for handling nucleotide sequences
