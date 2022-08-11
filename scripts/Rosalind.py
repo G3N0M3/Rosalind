@@ -650,7 +650,6 @@ def longest_common_subsequence(seq1, seq2) -> str:
 def shortest_common_supersequence(seq1, seq2) -> str:
     """
     returns the shortest supersequence of sequence 1 and 2
-    !!! currently generates wrong output
     Algorithm and code from below
     https://www.geeksforgeeks.org/print-shortest-common-supersequence/
     """
@@ -673,30 +672,31 @@ def shortest_common_supersequence(seq1, seq2) -> str:
                 else:
                     matrix.loc[idx1, idx2] = 1 + min(matrix.loc[idx1 - 1, idx2],
                                                      matrix.loc[idx1, idx2 - 1])
+
     # create shortest common superstring
     scs = ""
     idx1, idx2 = len1, len2
     while idx1 > 0 and idx2 > 0:
         # if character same
         if seq1[idx1 - 1] == seq2[idx2 - 1]:
-            scs += seq1[idx1 - 1]
+            scs = seq1[idx1 - 1] + scs
             idx1 -= 1
             idx2 -= 1
         else:  # if character not the same
             if matrix.loc[idx1 - 1, idx2] > matrix.loc[idx1, idx2 - 1]:
-                scs += seq1[idx1 - 1]
-                idx1 -= 1
-            else:
-                scs += seq2[idx2 - 1]
+                scs = seq2[idx2 - 1] + scs
                 idx2 -= 1
-    if not ((idx1 == 0) and (idx2 == 0)):
-        if idx1 == 0:
-            scs += seq2[:idx2][::-1]
-        else:  # idx2 == 0
-            scs += seq1[:idx1][::-1]
-        scs = scs[::-1]
+            else:
+                scs = seq1[idx1 - 1] + scs
+                idx1 -= 1
+    while idx1 > 0:
+        scs = seq1[idx1 - 1] + scs
+        idx1 -= 1
+    while idx2 > 0:
+        scs = seq2[idx2 - 1] + scs
+        idx2 -= 1
 
-        return scs
+    return scs
 
 
 def rank_lex(str1, str2, criteria: dict) -> tuple:
