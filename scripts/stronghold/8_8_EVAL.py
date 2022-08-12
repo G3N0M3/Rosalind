@@ -1,11 +1,13 @@
-# 8_7_SCSP
+# 8_8_EVAL
 import scripts.Rosalind as rs
 
 ### read data ###
-with open("../../inputs/stronghold/rosalind_scsp.txt", "r") as f:
-    seq1 = f.readline().rstrip()
-    seq2 = f.readline().rstrip()
+with open("../../inputs/stronghold/rosalind_eval.txt", "r") as f:
+    n = int(f.readline().rstrip())
+    s = f.readline().rstrip()
+    gc_contents = [float(x) for x in f.readline().rstrip().split()]
 
-scs = rs.shortest_common_supersequence(seq1, seq2)
 
-print(scs)
+print(n)
+print(s)
+print(gc_contents)
