@@ -571,6 +571,42 @@ def hamm_distance(seq1, seq2) -> int:
     return hamm
 
 
+def edit_distance(str1, str2) -> int:
+    """
+    calculate and returns the edit distance (deletion, insertion, substitution) btw string 1 and 2
+    More precisely, it calculates the Levenshtein distance
+    https://en.wikipedia.org/wiki/Levenshtein_distance
+    The code uses the Wagner-Fischer algorithm
+    https://en.wikipedia.org/wiki/Wagner%E2%80%93Fischer_algorithm
+    """
+    # make blank matrix
+    len1, len2 = map(len, [str1, str2])
+    matrix = pd.DataFrame(data=None,
+                          index=range(len1 + 1),
+                          columns=range(len2 + 1))
+    ## fill in values
+    # (0, 0)
+    matrix.loc[0, 0] = 0
+    # left-most values
+    for idx in range(1, len1 + 1):
+        matrix.loc[idx, 0] = idx
+    # up-most values
+    for col in range(1, len2 + 1):
+        matrix.loc[0, col] = col
+    # filling the rest
+    for idx in range(1, len1 + 1):
+        for col in range(1, len2 + 1):
+            if str1[idx - 1] == str2[col - 1]:
+                substitution_cost = 0
+            else:
+                substitution_cost = 1
+
+            matrix.loc[idx, col] = min(matrix.loc[idx - 1, col] + 1,
+                                       matrix.loc[idx, col - 1] + 1,
+                                       matrix.loc[idx - 1, col - 1] + substitution_cost)
+    return matrix.loc[len1, len2]
+
+
 def reverse_complement(seq) -> str:
     """
     return reverse complement of a DNA sequence
