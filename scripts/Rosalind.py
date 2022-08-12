@@ -578,6 +578,8 @@ def edit_distance(str1, str2) -> int:
     https://en.wikipedia.org/wiki/Levenshtein_distance
     The code uses the Wagner-Fischer algorithm
     https://en.wikipedia.org/wiki/Wagner%E2%80%93Fischer_algorithm
+    < Log >
+    function takes abt 2 minutes to calculate when len1, len2 = 880, 858
     """
     # make blank matrix
     len1, len2 = map(len, [str1, str2])
